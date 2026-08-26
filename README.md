@@ -9,11 +9,22 @@ Built with Next.js and designed to run full-screen on a Raspberry Pi with the of
 **Hardware:**
 
 - Raspberry Pi 4 (2GB RAM or more)
-- Raspberry Pi official 7" touchscreen display
+- Raspberry Pi official 7" touchscreen display (DSI ribbon cable + micro-USB power)
 - USB HID card reader (any reader that emulates keyboard input — sends digits followed by Enter)
 - microSD card (16GB or more)
 - USB-C power supply for the Pi (27 W or greater)
-- For initial setup: USB keyboard, USB mouse, HDMI monitor, micro-HDMI to HDMI cable
+- Micro-USB cable or adapter to power the touchscreen
+- SmartiPi Touch 2 case
+- USB keyboard for initial setup (an HDMI monitor and micro-HDMI cable are only needed if something goes wrong)
+
+**Stand (optional):**
+
+The SmartiPi Touch 2 case is VESA 75 compatible. The following parts make a compact stand using a cheap iPad stand:
+
+- VESA 75 mounting adapter bracket (3D-printable files in this repo)
+- 3mm laser-cut acrylic adapter plate (constrains the square key from the stand; laser-cut acrylic is sturdier than 3D printed)
+- iPad stand with removable spring-loaded bracket, such as Maxonar iPad Stand Holder — remove the iPad bracket and attach the acrylic plate and VESA adapter instead
+- 4x M4 bolts, 25mm, socket or button head
 
 **Credentials (have these ready before you start):**
 
@@ -38,43 +49,87 @@ Built with Next.js and designed to run full-screen on a Raspberry Pi with the of
 5. Click **Write** and wait for it to finish
 6. Eject the microSD card
 
-## Step 2: Initial Pi setup
+## Step 2: Assemble the hardware
+
+Before first boot, wire up the touchscreen and card reader with the Pi unpowered.
 
 1. Insert the microSD card into the Pi
-2. Connect the HDMI monitor, USB keyboard, and USB mouse
-3. Plug in power — the Pi will boot to the desktop
-4. Complete any first-boot prompts (language, password confirmation, WiFi if not preconfigured, software updates)
-5. Open a terminal (click the terminal icon in the taskbar, or press Ctrl+Alt+T)
-6. Verify you have internet access:
+2. Connect the ribbon cable from the display to the Pi's **DSI port**. The Pi 4 has two identical-looking ribbon cable connectors — use the one labeled "DISPLAY" (between the HDMI ports and the audio jack), **not** the one labeled "CAMERA".
+3. Connect the display's **micro-USB power cable** to a power source (a separate USB power adapter — do not use the Pi's USB ports or a splitter cable, as this can cause overcurrent errors)
+4. Mount the Pi to the back of the display using the SmartiPi Touch 2 case and included standoffs
+5. Plug the USB card reader into one of the Pi's USB ports
+6. Connect a USB keyboard to one of the Pi's USB ports
+
+The display gets its video signal through the DSI ribbon cable and its power through the micro-USB port — both must be connected.
+
+Refer to the [official touchscreen documentation](https://www.raspberrypi.com/documentation/accessories/display.html) for detailed wiring.
+
+## Step 3: Initial Pi setup
+
+Plug in the Pi's USB-C power cable. The desktop should appear on the touchscreen. If the screen stays blank, see Troubleshooting below — you may need to connect an HDMI monitor temporarily to diagnose.
+
+1. Complete any first-boot prompts (language, password confirmation, WiFi if not preconfigured)
+2. Open a terminal (tap the terminal icon in the taskbar, or press Ctrl+Alt+T on the keyboard)
+3. Verify you have internet access:
    ```
    ping -c 3 google.com
    ```
+4. Apply system updates. The image from Raspberry Pi Imager may be several months out of date:
+   ```
+   sudo apt update
+   sudo apt upgrade --autoremove
+   ```
+   If connecting remotely via Raspberry Pi Connect, update `rpi-connect` first (the full upgrade may disconnect the session):
+   ```
+   sudo apt update
+   sudo apt install --only-upgrade rpi-connect
+   ```
+   Wait for the Pi to reconnect, then run the full upgrade:
+   ```
+   sudo apt upgrade --autoremove
+   ```
+   The Pi may reboot after updates complete.
+5. Disable the on-screen keyboard so it doesn't appear during kiosk operation:
+
+   **Raspberry Pi Menu > Preferences > Control Centre > Display > On-screen Keyboard > Disabled**
+
+6. **Fix the Ethernet/OmniKey conflict (ethernet deployments only):**
+
+   The OmniKey 5427CK card reader presents as both a USB HID device and a USB Ethernet adapter. When connected, the Pi assigns the default `netplan-eth0` profile to the reader's USB Ethernet interface instead of the onboard NIC, leaving the real ethernet port disconnected. Fix this by deleting the misconfigured profile and creating correct ones:
+
+   ```
+   # Delete the profile that got attached to the wrong interface
+   sudo nmcli connection delete netplan-eth0
+
+   # Create a profile for the real onboard ethernet
+   sudo nmcli connection add type ethernet con-name "Wired" ifname eth0 ipv4.method auto connection.autoconnect yes
+
+   # Create a profile for the OmniKey's USB-Ethernet interface
+   sudo nmcli connection add type ethernet con-name usb0-omnikey ifname usb0 ipv4.method auto connection.autoconnect yes
+
+   # Bring both up
+   sudo nmcli connection up "Wired"
+   sudo nmcli connection up usb0-omnikey
+   ```
+
+   Verify the result:
+
+   ```
+   nmcli device status
+   ip a show eth0
+   ip a show usb0
+   ```
+
+   You should see `eth0` connected via `Wired` with a LAN IP from your DHCP server, and `usb0` connected via `usb0-omnikey` with an IP in the `192.168.63.x` range (the reader's local subnet).
+
 7. Make sure git is installed (it should be by default):
    ```
    git --version
    ```
 
-## Step 3: Connect the touchscreen
+If the display is upside down, see Troubleshooting below.
 
-Power off the Pi:
-
-```
-sudo shutdown -h now
-```
-
-Disconnect the HDMI monitor, keyboard, and mouse. Connect the official 7" touchscreen:
-
-1. Connect the ribbon cable from the display to the Pi's DSI port
-2. Connect the display's power jumper wires to the Pi's GPIO pins (5V and GND)
-3. Mount the Pi to the back of the display using the standoffs
-
-Refer to the [official touchscreen documentation](https://www.raspberrypi.com/documentation/accessories/display.html) for detailed wiring instructions.
-
-Plug the USB card reader into one of the Pi's USB ports.
-
-Power the Pi back on. The touchscreen should display the desktop. If the display is upside down, you can fix it later (see Troubleshooting below).
-
-**From this point on, you can either work directly on the touchscreen with a USB keyboard, or SSH in from another computer** (`ssh pi@labsync-kiosk.local` or whatever hostname you set).
+**From this point on, you can either work directly on the touchscreen with the USB keyboard, or SSH in from another computer** (`ssh pi@labsync-kiosk.local` or whatever hostname you set).
 
 ## Step 4: Copy your Firebase key to the Pi
 
@@ -202,6 +257,20 @@ sudo reboot
 ```
 
 ## Troubleshooting
+
+**Touchscreen stays blank after disconnecting HDMI:**
+
+SSH in from another computer: `ssh pi@labsync-kiosk.local`
+
+Check that the DSI display is detected:
+
+```
+DISPLAY=:0 xrandr
+```
+
+If it only shows HDMI outputs, the ribbon cable may not be seated properly. Power off, reseat the cable, and try again.
+
+If the display is detected but not active, edit `/boot/firmware/config.txt` and add `display_default_lcd=1` under `[all]`, then reboot.
 
 **Display is upside down:**
 
