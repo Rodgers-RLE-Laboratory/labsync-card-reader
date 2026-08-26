@@ -169,7 +169,7 @@ sudo bash labsync-card-reader/install.sh
 
 The script will:
 
-1. Install Node.js 20 if needed
+1. Install Node.js 22 if needed
 2. Clone the app to `/opt/labsync-card-reader`
 3. Build it
 4. Prompt you for your credentials:

@@ -4,7 +4,7 @@ set -euo pipefail
 INSTALL_DIR="/opt/labsync-card-reader"
 REPO_URL="https://github.com/Rodgers-RLE-Laboratory/labsync-card-reader.git"
 SERVICE_NAME="labsync-card-reader"
-NODE_MAJOR=20
+NODE_MAJOR=22
 
 echo "========================================"
 echo "  LabSync Card Reader — Install Script  "
@@ -17,7 +17,7 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-# ── 1. Install Node.js 20 LTS if needed ─────────────────────────────
+# ── 1. Install Node.js 22 LTS if needed ─────────────────────────────
 if command -v node &>/dev/null && [[ "$(node -v | cut -d. -f1 | tr -d v)" -ge "$NODE_MAJOR" ]]; then
   echo "[OK] Node.js $(node -v) is already installed."
 else
@@ -74,7 +74,7 @@ ENV_FILE="$INSTALL_DIR/.env.local"
 
 if [[ -f "$ENV_FILE" ]]; then
   echo
-  read -rp "[?] .env.local already exists. Overwrite? [y/N] " overwrite
+  read -rp "[?] .env.local already exists. Overwrite? [y/N] " overwrite < /dev/tty
   if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
     echo "[OK] Keeping existing .env.local."
   else
@@ -88,12 +88,12 @@ if [[ ! -f "$ENV_FILE" ]]; then
   echo "Press Enter to skip optional values."
   echo
 
-  read -rp "MIT_CARD_CLIENT_ID (required): " MIT_CARD_CLIENT_ID
-  read -rp "MIT_CARD_CLIENT_SECRET (required): " MIT_CARD_CLIENT_SECRET
-  read -rp "FIREBASE_SERVICE_ACCOUNT_KEY path (required) [/opt/labsync-card-reader/firebase-service-account.json]: " FIREBASE_KEY
+  read -rp "MIT_CARD_CLIENT_ID (required): " MIT_CARD_CLIENT_ID < /dev/tty
+  read -rp "MIT_CARD_CLIENT_SECRET (required): " MIT_CARD_CLIENT_SECRET < /dev/tty
+  read -rp "FIREBASE_SERVICE_ACCOUNT_KEY path (required) [/opt/labsync-card-reader/firebase-service-account.json]: " FIREBASE_KEY < /dev/tty
   FIREBASE_KEY="${FIREBASE_KEY:-/opt/labsync-card-reader/firebase-service-account.json}"
-  read -rp "NEMO_URL (optional): " NEMO_URL
-  read -rp "NEMO_API_TOKEN (optional): " NEMO_API_TOKEN
+  read -rp "NEMO_URL (optional): " NEMO_URL < /dev/tty
+  read -rp "NEMO_API_TOKEN (optional): " NEMO_API_TOKEN < /dev/tty
 
   NEMO_AREA_ID=""
   if [[ -n "$NEMO_URL" && -n "$NEMO_API_TOKEN" ]]; then
@@ -110,14 +110,14 @@ for a in areas:
     print(f\"    {a['id']}) {a['name']}\")
 " 2>/dev/null
       echo
-      read -rp "  Select area ID for this kiosk: " NEMO_AREA_ID
+      read -rp "  Select area ID for this kiosk: " NEMO_AREA_ID < /dev/tty
     else
       echo "  [!] Could not fetch areas from NEMO. You can set NEMO_AREA_ID manually later."
-      read -rp "NEMO_AREA_ID (optional): " NEMO_AREA_ID
+      read -rp "NEMO_AREA_ID (optional): " NEMO_AREA_ID < /dev/tty
     fi
   fi
 
-  read -rp "SITE_TITLE (optional) [LabSync]: " SITE_TITLE
+  read -rp "SITE_TITLE (optional) [LabSync]: " SITE_TITLE < /dev/tty
   SITE_TITLE="${SITE_TITLE:-LabSync}"
 
   cat > "$ENV_FILE" <<EOF
@@ -135,9 +135,9 @@ EOF
 fi
 
 # ── 5. Set ownership ────────────────────────────────────────────────
-# Determine the target user (prefer 'pi', fall back to SUDO_USER)
-RUN_USER="${SUDO_USER:-pi}"
-if ! id "$RUN_USER" &>/dev/null; then
+# Determine the target user (prefer SUDO_USER, fall back to 'pi')
+RUN_USER="${SUDO_USER-pi}"
+if [[ -z "$RUN_USER" ]] || ! id "$RUN_USER" &>/dev/null; then
   RUN_USER="pi"
 fi
 chown -R "$RUN_USER:$RUN_USER" "$INSTALL_DIR"
