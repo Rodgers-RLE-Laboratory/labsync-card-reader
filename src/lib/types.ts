@@ -4,7 +4,6 @@ export interface CheckinRequest {
 
 export interface CheckinResponse {
   success: boolean;
-  kerberosId?: string;
   firstName?: string;
   lastName?: string;
   error?: string;

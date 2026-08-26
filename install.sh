@@ -37,8 +37,17 @@ fi
 # ── 2. Clone or update the repo ─────────────────────────────────────
 if [[ -d "$INSTALL_DIR/.git" ]]; then
   echo "[*] Updating existing install at $INSTALL_DIR..."
+
+  # Stop the service during update so the old process doesn't serve
+  # broken files while node_modules and .next are being replaced.
+  if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+    echo "[*] Stopping service for update..."
+    systemctl stop "$SERVICE_NAME"
+  fi
+
   git -C "$INSTALL_DIR" fetch --all
   git -C "$INSTALL_DIR" reset --hard origin/main
+  git -C "$INSTALL_DIR" gc --quiet
 else
   echo "[*] Cloning repo to $INSTALL_DIR..."
   git clone "$REPO_URL" "$INSTALL_DIR"
@@ -47,6 +56,10 @@ fi
 # ── 3. Build the app ────────────────────────────────────────────────
 echo "[*] Installing dependencies and building..."
 cd "$INSTALL_DIR"
+
+# Clean stale build output from previous installs
+rm -rf .next
+
 npm ci --omit=dev
 npm run build
 

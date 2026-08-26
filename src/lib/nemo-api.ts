@@ -60,8 +60,7 @@ export async function createAreaAccessRecord(
   });
 
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`NEMO area access record creation failed: ${response.status} ${body}`);
+    throw new Error(`NEMO area access record creation failed: ${response.status}`);
   }
 
   const record = await response.json();

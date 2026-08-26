@@ -1,12 +1,51 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { hidToApi } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
 import { logCheckin } from "@/lib/firestore";
 import { createAreaAccessRecord } from "@/lib/nemo-api";
 import { CheckinRequest, CheckinResponse } from "@/lib/types";
 
+// Simple in-memory rate limiter: max requests per window per IP
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 10;
+const requestCounts = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = requestCounts.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    requestCounts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
+// Periodically clean up stale entries to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of requestCounts) {
+    if (now > entry.resetAt) requestCounts.delete(ip);
+  }
+}, RATE_LIMIT_WINDOW_MS);
+
 export async function POST(request: Request): Promise<NextResponse<CheckinResponse>> {
   try {
+    // Rate limit by client IP
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || headersList.get("x-real-ip")
+      || "unknown";
+
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please wait.", errorCode: "API_ERROR" },
+        { status: 429 }
+      );
+    }
     const body: CheckinRequest = await request.json();
     const { rawCardId } = body;
 
@@ -60,7 +99,6 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
 
     return NextResponse.json({
       success: true,
-      kerberosId: cardResult.krbName,
       firstName: cardResult.firstName,
       lastName: cardResult.lastName,
     });
