@@ -81,7 +81,29 @@ if [[ ! -f "$ENV_FILE" ]]; then
   FIREBASE_KEY="${FIREBASE_KEY:-/opt/labsync-card-reader/firebase-service-account.json}"
   read -rp "NEMO_URL (optional): " NEMO_URL
   read -rp "NEMO_API_TOKEN (optional): " NEMO_API_TOKEN
-  read -rp "NEMO_AREA_ID (optional): " NEMO_AREA_ID
+
+  NEMO_AREA_ID=""
+  if [[ -n "$NEMO_URL" && -n "$NEMO_API_TOKEN" ]]; then
+    echo
+    echo "  Fetching areas from NEMO..."
+    AREAS_JSON=$(curl -sf -H "Authorization: Token ${NEMO_API_TOKEN}" "${NEMO_URL}areas/" 2>/dev/null || true)
+    if [[ -n "$AREAS_JSON" ]]; then
+      echo
+      echo "  Available areas:"
+      echo "$AREAS_JSON" | python -c "
+import json, sys
+areas = json.load(sys.stdin)
+for a in areas:
+    print(f\"    {a['id']}) {a['name']}\")
+" 2>/dev/null
+      echo
+      read -rp "  Select area ID for this kiosk: " NEMO_AREA_ID
+    else
+      echo "  [!] Could not fetch areas from NEMO. You can set NEMO_AREA_ID manually later."
+      read -rp "NEMO_AREA_ID (optional): " NEMO_AREA_ID
+    fi
+  fi
+
   read -rp "SITE_TITLE (optional) [LabSync]: " SITE_TITLE
   SITE_TITLE="${SITE_TITLE:-LabSync}"
 

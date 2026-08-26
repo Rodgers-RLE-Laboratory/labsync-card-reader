@@ -27,9 +27,15 @@ export interface CheckinRecord {
   areaName: string;
 }
 
+export interface NemoUser {
+  id: number;
+  username: string;
+  projects: number[];
+}
+
 export interface NemoAreaAccessResult {
   success: boolean;
-  stubbed?: boolean;
+  recordId?: number;
   error?: string;
 }
 
