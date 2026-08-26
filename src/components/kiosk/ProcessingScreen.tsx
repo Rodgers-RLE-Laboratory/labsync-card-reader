@@ -1,0 +1,12 @@
+"use client";
+
+import { Loader2 } from "lucide-react";
+
+export function ProcessingScreen() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in">
+      <Loader2 className="h-20 w-20 text-primary animate-spin" />
+      <h2 className="text-2xl font-medium text-foreground">Checking in...</h2>
+    </div>
+  );
+}

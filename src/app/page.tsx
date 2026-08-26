@@ -1,9 +1,11 @@
+import { KioskScreen } from "@/components/kiosk/KioskScreen";
+
 export default function Home() {
+  const siteTitle = process.env.SITE_TITLE || "LabSync";
+
   return (
     <main className="flex flex-1 items-center justify-center">
-      <h1 className="text-2xl font-semibold text-foreground">
-        LabSync Card Reader
-      </h1>
+      <KioskScreen siteTitle={siteTitle} />
     </main>
   );
 }
