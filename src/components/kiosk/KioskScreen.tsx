@@ -6,6 +6,9 @@ import { IdleScreen } from "./IdleScreen";
 import { ProcessingScreen } from "./ProcessingScreen";
 import { SuccessScreen } from "./SuccessScreen";
 import { ErrorScreen } from "./ErrorScreen";
+import { RestoredScreen } from "./RestoredScreen";
+import { PendingUserScreen } from "./PendingUserScreen";
+import { UnknownUserScreen } from "./UnknownUserScreen";
 import Image from "next/image";
 import { KioskState, KioskData, CheckinResponse } from "@/lib/types";
 
@@ -37,9 +40,23 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
         const result: CheckinResponse = await response.json();
 
         if (result.success) {
-          setState("success");
-          setData({ firstName: result.firstName, lastName: result.lastName });
-          setTimeout(resetToIdle, 3000);
+          if (result.userStatus === "restored") {
+            setState("restored");
+            setData({ firstName: result.firstName, lastName: result.lastName });
+            setTimeout(resetToIdle, 5000);
+          } else {
+            setState("success");
+            setData({ firstName: result.firstName, lastName: result.lastName });
+            setTimeout(resetToIdle, 3000);
+          }
+        } else if (result.userStatus === "pending") {
+          setState("pending_user");
+          setData({});
+          setTimeout(resetToIdle, 10000);
+        } else if (result.userStatus === "unknown") {
+          setState("unknown_user");
+          setData({});
+          setTimeout(resetToIdle, 10000);
         } else {
           setState("error");
           setData({ errorMessage: result.error || "Unknown error" });
@@ -98,6 +115,14 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
       {state === "error" && (
         <ErrorScreen message={data.errorMessage || "Unknown error"} />
       )}
+      {state === "restored" && (
+        <RestoredScreen
+          firstName={data.firstName || ""}
+          lastName={data.lastName || ""}
+        />
+      )}
+      {state === "pending_user" && <PendingUserScreen />}
+      {state === "unknown_user" && <UnknownUserScreen />}
     </div>
   );
 }

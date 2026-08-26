@@ -4,6 +4,7 @@ import { hidToApi } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
 import { logCheckin } from "@/lib/firestore";
 import { createAreaAccessRecord } from "@/lib/nemo-api";
+import { lookupUserStatus, reactivateUser, restoreArchivedUser } from "@/lib/user-status";
 import { CheckinRequest, CheckinResponse } from "@/lib/types";
 
 // Simple in-memory rate limiter: max requests per window per IP
@@ -78,6 +79,47 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       );
     }
 
+    // Check user status in Firestore
+    const { status: userStatus } = await lookupUserStatus(cardResult.krbName);
+
+    // Pending users: remind about orientation, don't log check-in
+    if (userStatus === "pending") {
+      return NextResponse.json({
+        success: false,
+        firstName: cardResult.firstName,
+        lastName: cardResult.lastName,
+        userStatus: "pending",
+      });
+    }
+
+    // Unknown users: not recognized, don't log check-in
+    if (userStatus === "unknown") {
+      return NextResponse.json({
+        success: false,
+        firstName: cardResult.firstName,
+        lastName: cardResult.lastName,
+        userStatus: "unknown",
+      });
+    }
+
+    // Inactive users: reactivate
+    if (userStatus === "inactive") {
+      try {
+        await reactivateUser(cardResult.krbName);
+      } catch (err) {
+        console.error("[UserStatus] Error reactivating user:", err);
+      }
+    }
+
+    // Archived users: restore to users collection
+    if (userStatus === "archived") {
+      try {
+        await restoreArchivedUser(cardResult.krbName);
+      } catch (err) {
+        console.error("[UserStatus] Error restoring archived user:", err);
+      }
+    }
+
     // Log to Firestore
     try {
       const areaName = process.env.SITE_TITLE || "Unknown";
@@ -101,6 +143,7 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       success: true,
       firstName: cardResult.firstName,
       lastName: cardResult.lastName,
+      userStatus: userStatus === "inactive" || userStatus === "archived" ? "restored" as const : userStatus,
     });
   } catch (err) {
     console.error("[Checkin] Unexpected error:", err);

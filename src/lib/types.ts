@@ -2,12 +2,15 @@ export interface CheckinRequest {
   rawCardId: string;
 }
 
+export type UserStatus = "active" | "inactive" | "archived" | "pending" | "unknown" | "restored";
+
 export interface CheckinResponse {
   success: boolean;
   firstName?: string;
   lastName?: string;
   error?: string;
   errorCode?: "INVALID_CARD" | "CARD_NOT_FOUND" | "API_ERROR" | "FIRESTORE_ERROR";
+  userStatus?: UserStatus;
 }
 
 export interface CardLookupResult {
@@ -38,10 +41,11 @@ export interface NemoAreaAccessResult {
   error?: string;
 }
 
-export type KioskState = "idle" | "processing" | "success" | "error";
+export type KioskState = "idle" | "processing" | "success" | "error" | "restored" | "pending_user" | "unknown_user";
 
 export interface KioskData {
   firstName?: string;
   lastName?: string;
   errorMessage?: string;
+  qrUrl?: string;
 }
