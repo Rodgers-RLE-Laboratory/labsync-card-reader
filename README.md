@@ -1,5 +1,7 @@
 # LabSync Card Reader
 
+Based on [MITProjectManus/make-checkin](https://github.com/MITProjectManus/make-checkin).
+
 A kiosk app for MIT card check-ins. Users tap their MIT ID card on an HID card reader and the app looks up their identity via the MIT Card API, logs the check-in to Firestore, and displays a welcome message.
 
 Built with Next.js and designed to run full-screen on a Raspberry Pi with the official 7" touchscreen.
