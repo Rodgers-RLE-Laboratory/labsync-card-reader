@@ -60,7 +60,7 @@ cd "$INSTALL_DIR"
 # Clean stale build output from previous installs
 rm -rf .next
 
-npm ci --omit=dev
+npm ci
 npm run build
 
 # Copy static assets into standalone output (required by Next.js standalone)
