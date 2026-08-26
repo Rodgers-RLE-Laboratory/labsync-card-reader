@@ -12,7 +12,7 @@ Built with Next.js and designed to run full-screen on a Raspberry Pi with the of
 - Raspberry Pi official 7" touchscreen display
 - USB HID card reader (any reader that emulates keyboard input — sends digits followed by Enter)
 - microSD card (16GB or more)
-- USB-C power supply for the Pi (5V 3A)
+- USB-C power supply for the Pi (27 W or greater)
 - For initial setup: USB keyboard, USB mouse, HDMI monitor, micro-HDMI to HDMI cable
 
 **Credentials (have these ready before you start):**

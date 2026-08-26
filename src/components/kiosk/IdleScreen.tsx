@@ -9,6 +9,9 @@ export function IdleScreen() {
         <Nfc className="h-24 w-24 text-primary animate-pulse-slow" />
       </div>
       <div className="text-center">
+        <p className="mb-1 text-lg text-muted-foreground">
+          You must check-in to use this area
+        </p>
         <h2 className="text-3xl font-semibold text-foreground">
           Tap your MIT ID
         </h2>

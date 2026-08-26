@@ -6,6 +6,7 @@ import { IdleScreen } from "./IdleScreen";
 import { ProcessingScreen } from "./ProcessingScreen";
 import { SuccessScreen } from "./SuccessScreen";
 import { ErrorScreen } from "./ErrorScreen";
+import Image from "next/image";
 import { KioskState, KioskData, CheckinResponse } from "@/lib/types";
 
 interface KioskScreenProps {
@@ -70,10 +71,20 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
         autoComplete="off"
       />
 
-      {/* Site title */}
-      <h1 className="absolute top-8 text-xl font-medium text-muted-foreground">
-        {siteTitle}
-      </h1>
+      {/* Lab logo and site title */}
+      <div className="absolute top-8 flex flex-col items-center gap-3">
+        <Image
+          src="/rodgers-rle-logo.png"
+          alt="T.J. Rodgers RLE Laboratory"
+          width={240}
+          height={80}
+          className="rounded-lg bg-white p-2"
+          priority
+        />
+        <h1 className="text-xl font-medium text-muted-foreground">
+          {siteTitle}
+        </h1>
+      </div>
 
       {/* State screens */}
       {state === "idle" && <IdleScreen />}
