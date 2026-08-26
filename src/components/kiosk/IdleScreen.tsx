@@ -4,9 +4,9 @@ import { Nfc } from "lucide-react";
 
 export function IdleScreen() {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in">
-      <div className="rounded-full bg-primary/10 p-8">
-        <Nfc className="h-24 w-24 text-primary animate-pulse-slow" />
+    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in pt-8">
+      <div className="rounded-full bg-primary/10 p-5">
+        <Nfc className="h-14 w-14 text-primary animate-pulse-slow" />
       </div>
       <div className="text-center">
         <p className="mb-1 text-lg text-muted-foreground">

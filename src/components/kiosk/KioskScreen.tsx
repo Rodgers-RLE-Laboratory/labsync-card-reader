@@ -77,7 +77,7 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
   });
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-8">
+    <div className="flex flex-1 flex-col items-center p-8">
       {/* Hidden input for card reader */}
       <input
         ref={inputRef}
@@ -89,7 +89,7 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
       />
 
       {/* Lab logo and site title */}
-      <div className="absolute top-8 flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-2">
         <Image
           src="/rodgers-rle-logo.png"
           alt="T.J. Rodgers RLE Laboratory"
@@ -98,12 +98,10 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
           className="rounded-lg bg-white p-2"
           priority
         />
-        <h1 className="text-xl font-medium text-muted-foreground">
-          {siteTitle}
-        </h1>
       </div>
 
       {/* State screens */}
+      <div className="flex flex-1 flex-col items-center justify-center">
       {state === "idle" && <IdleScreen />}
       {state === "processing" && <ProcessingScreen />}
       {state === "success" && (
@@ -123,6 +121,7 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
       )}
       {state === "pending_user" && <PendingUserScreen />}
       {state === "unknown_user" && <UnknownUserScreen />}
+      </div>
     </div>
   );
 }
