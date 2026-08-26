@@ -11,8 +11,8 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-KIOSK_USER="${SUDO_USER:-pi}"
-if ! id "$KIOSK_USER" &>/dev/null; then
+KIOSK_USER="${SUDO_USER-pi}"
+if [[ -z "$KIOSK_USER" ]] || ! id "$KIOSK_USER" &>/dev/null; then
   KIOSK_USER="pi"
 fi
 
@@ -23,7 +23,23 @@ echo "[*] Configuring kiosk mode for user: $KIOSK_USER"
 # ── 1. Install dependencies ─────────────────────────────────────────
 echo "[*] Installing kiosk dependencies..."
 apt-get update -qq
-apt-get install -y -qq chromium-browser unclutter xdotool
+apt-get install -y -qq unclutter xdotool
+
+# Detect Chromium binary name (newer Pi OS uses 'chromium', older uses 'chromium-browser')
+if command -v chromium &>/dev/null; then
+  CHROMIUM_BIN="chromium"
+elif command -v chromium-browser &>/dev/null; then
+  CHROMIUM_BIN="chromium-browser"
+else
+  echo "[*] Chromium not found, installing..."
+  apt-get install -y -qq chromium-browser 2>/dev/null || apt-get install -y -qq chromium
+  if command -v chromium &>/dev/null; then
+    CHROMIUM_BIN="chromium"
+  else
+    CHROMIUM_BIN="chromium-browser"
+  fi
+fi
+echo "[OK] Using Chromium binary: $CHROMIUM_BIN"
 
 # ── 2. Set up autologin ─────────────────────────────────────────────
 echo "[*] Configuring autologin..."
@@ -52,7 +68,7 @@ cat > "$AUTOSTART_DIR/labsync-kiosk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=LabSync Kiosk
-Exec=/bin/bash -c 'sleep 5 && chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-translate --disable-features=TranslateUI --check-for-update-interval=31536000 --disable-session-crashed-bubble ${KIOSK_URL}'
+Exec=/bin/bash -c 'sleep 5 && ${CHROMIUM_BIN} --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-translate --disable-features=TranslateUI --check-for-update-interval=31536000 --disable-session-crashed-bubble ${KIOSK_URL}'
 X-GNOME-Autostart-enabled=true
 EOF
 
