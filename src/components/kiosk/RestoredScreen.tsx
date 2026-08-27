@@ -9,7 +9,7 @@ interface RestoredScreenProps {
 
 export function RestoredScreen({ firstName, lastName }: RestoredScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in">
+    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in pt-8">
       <div className="rounded-full bg-green-100 p-5">
         <CheckCircle2 className="h-14 w-14 text-green-600" />
       </div>

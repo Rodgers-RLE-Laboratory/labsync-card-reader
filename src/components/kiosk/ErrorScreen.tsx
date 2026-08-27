@@ -8,7 +8,7 @@ interface ErrorScreenProps {
 
 export function ErrorScreen({ message }: ErrorScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in">
+    <div className="flex flex-col items-center justify-center gap-8 animate-fade-in pt-8">
       <div className="rounded-full bg-red-100 p-5">
         <XCircle className="h-14 w-14 text-red-600" />
       </div>
