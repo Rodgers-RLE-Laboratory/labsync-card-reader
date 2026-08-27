@@ -8,8 +8,8 @@ const GET_STARTED_URL = "https://tjr-lab.mit.edu/engagement/get-started/";
 export function PendingUserScreen() {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-fade-in">
-      <div className="rounded-full bg-amber-100 p-6">
-        <Clock className="h-20 w-20 text-amber-600" />
+      <div className="rounded-full bg-amber-100 p-5">
+        <Clock className="h-14 w-14 text-amber-600" />
       </div>
       <div className="text-center">
         <h2 className="text-3xl font-semibold text-foreground">

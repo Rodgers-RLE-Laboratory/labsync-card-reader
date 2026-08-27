@@ -10,8 +10,8 @@ interface SuccessScreenProps {
 export function SuccessScreen({ firstName, lastName }: SuccessScreenProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-8 animate-fade-in">
-      <div className="rounded-full bg-green-100 p-6">
-        <CheckCircle2 className="h-20 w-20 text-green-600" />
+      <div className="rounded-full bg-green-100 p-5">
+        <CheckCircle2 className="h-14 w-14 text-green-600" />
       </div>
       <div className="text-center">
         <h2 className="text-3xl font-semibold text-foreground">

@@ -8,8 +8,8 @@ const LAB_URL = "https://tjr-lab.mit.edu/";
 export function UnknownUserScreen() {
   return (
     <div className="flex flex-col items-center justify-center gap-6 animate-fade-in">
-      <div className="rounded-full bg-red-100 p-6">
-        <HelpCircle className="h-20 w-20 text-red-600" />
+      <div className="rounded-full bg-red-100 p-5">
+        <HelpCircle className="h-14 w-14 text-red-600" />
       </div>
       <div className="text-center">
         <h2 className="text-3xl font-semibold text-foreground">
