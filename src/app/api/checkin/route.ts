@@ -58,25 +58,33 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       );
     }
 
-    // Convert HID card format to API format
-    const cardId = hidToApi(rawCardId);
-
-    // Look up card via MIT Card API
+    // Look up card identity
     let cardResult;
-    try {
-      cardResult = await lookupCard(cardId);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      if (message === "CARD_NOT_FOUND") {
+    const mockUser = process.env.MOCK_CARD_USER;
+    if (mockUser) {
+      // MOCK_CARD_USER=kerberosId:firstName:lastName:mitId
+      const [krbName, firstName, lastName, mitId] = mockUser.split(":");
+      cardResult = { krbName, firstName, lastName, mitId };
+      console.warn("[Checkin] Using MOCK_CARD_USER — bypassing MIT Card API");
+    } else {
+      // Convert HID card format to API format
+      const cardId = hidToApi(rawCardId);
+
+      try {
+        cardResult = await lookupCard(cardId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        if (message === "CARD_NOT_FOUND") {
+          return NextResponse.json(
+            { success: false, error: "Card not recognized", errorCode: "CARD_NOT_FOUND" },
+            { status: 404 }
+          );
+        }
         return NextResponse.json(
-          { success: false, error: "Card not recognized", errorCode: "CARD_NOT_FOUND" },
-          { status: 404 }
+          { success: false, error: "Card API error", errorCode: "API_ERROR" },
+          { status: 502 }
         );
       }
-      return NextResponse.json(
-        { success: false, error: "Card API error", errorCode: "API_ERROR" },
-        { status: 502 }
-      );
     }
 
     // Check user status in Firestore
