@@ -124,21 +124,7 @@ Plug in the Pi's USB-C power cable. The desktop should appear on the touchscreen
 
    You should see `eth0` connected via `Wired` with a LAN IP from your DHCP server, and `usb0` connected via `usb0-omnikey` with an IP in the `192.168.63.x` range (the reader's local subnet).
 
-7. Install `unclutter` to automatically hide the mouse cursor after a few seconds of inactivity — it shouldn't be visible during normal kiosk operation:
-   ```
-   sudo apt install unclutter
-   ```
-   This also installs the `unclutter-startup` package. Verify that unclutter is configured to start with X11:
-   ```
-   cat /etc/default/unclutter
-   ```
-   `START_UNCLUTTER` should be set to `true`. If not:
-   ```
-   sudo nano /etc/default/unclutter
-   # Set: START_UNCLUTTER="true"
-   ```
-
-8. Make sure git is installed (it should be by default):
+7. Make sure git is installed (it should be by default):
    ```
    git --version
    ```
