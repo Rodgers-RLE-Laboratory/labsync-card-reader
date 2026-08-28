@@ -1,4 +1,5 @@
 import { CardLookupResult } from "./types";
+import { env } from "./env";
 
 const TOKEN_URL =
   "https://mitprod.okta.com/oauth2/aus6sh93rjqnQuszg697/v1/token";
@@ -13,8 +14,8 @@ async function getAccessToken(): Promise<string> {
     return cachedToken;
   }
 
-  const clientId = process.env.MIT_CARD_CLIENT_ID;
-  const clientSecret = process.env.MIT_CARD_CLIENT_SECRET;
+  const clientId = env("MIT_CARD_CLIENT_ID");
+  const clientSecret = env("MIT_CARD_CLIENT_SECRET");
 
   if (!clientId || !clientSecret) {
     throw new Error("MIT_CARD_CLIENT_ID and MIT_CARD_CLIENT_SECRET must be set");

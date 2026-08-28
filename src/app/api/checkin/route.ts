@@ -6,6 +6,7 @@ import { logCheckin } from "@/lib/firestore";
 import { createAreaAccessRecord } from "@/lib/nemo-api";
 import { lookupUserStatus, reactivateUser, restoreArchivedUser } from "@/lib/user-status";
 import { CheckinRequest, CheckinResponse } from "@/lib/types";
+import { env } from "@/lib/env";
 
 // Simple in-memory rate limiter: max requests per window per IP
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
@@ -60,7 +61,7 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
 
     // Look up card identity
     let cardResult;
-    const mockUser = process.env.MOCK_CARD_USER;
+    const mockUser = env("MOCK_CARD_USER");
     if (mockUser) {
       // MOCK_CARD_USER=kerberosId:firstName:lastName:mitId
       const [krbName, firstName, lastName, mitId] = mockUser.split(":");
@@ -130,7 +131,7 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
 
     // Log to Firestore
     try {
-      const areaName = process.env.SITE_TITLE || "Unknown";
+      const areaName = env("SITE_TITLE") || "Unknown";
       await logCheckin(cardResult, areaName);
     } catch (err) {
       console.error("[Firestore] Error logging check-in:", err);

@@ -1,11 +1,12 @@
 import { NemoUser, NemoAreaAccessResult } from "./types";
+import { env } from "./env";
 
 /**
  * Look up a NEMO user by their kerberos username.
  */
 async function lookupNemoUser(kerberosId: string): Promise<NemoUser> {
-  const nemoUrl = process.env.NEMO_URL;
-  const nemoToken = process.env.NEMO_API_TOKEN;
+  const nemoUrl = env("NEMO_URL");
+  const nemoToken = env("NEMO_API_TOKEN");
 
   const response = await fetch(`${nemoUrl}users/?username=${kerberosId}`, {
     headers: { Authorization: `Token ${nemoToken}` },
@@ -31,9 +32,9 @@ async function lookupNemoUser(kerberosId: string): Promise<NemoUser> {
 export async function createAreaAccessRecord(
   kerberosId: string
 ): Promise<NemoAreaAccessResult> {
-  const nemoUrl = process.env.NEMO_URL;
-  const nemoToken = process.env.NEMO_API_TOKEN;
-  const areaId = process.env.NEMO_AREA_ID;
+  const nemoUrl = env("NEMO_URL");
+  const nemoToken = env("NEMO_API_TOKEN");
+  const areaId = env("NEMO_AREA_ID");
 
   if (!nemoUrl || !nemoToken || !areaId) {
     console.log("[NEMO] Skipping — NEMO_URL, NEMO_API_TOKEN, or NEMO_AREA_ID not configured");

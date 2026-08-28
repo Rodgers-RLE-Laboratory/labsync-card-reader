@@ -1,6 +1,7 @@
 import { App, cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { readFileSync } from "fs";
+import { env } from "./env";
 
 let app: App;
 let db: Firestore;
@@ -10,7 +11,7 @@ function getFirebaseApp(): App {
     return getApps()[0];
   }
 
-  const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const keyPath = env("FIREBASE_SERVICE_ACCOUNT_KEY");
   if (!keyPath) {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY env var is not set");
   }
