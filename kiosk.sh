@@ -68,7 +68,7 @@ cat > "$AUTOSTART_DIR/labsync-kiosk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=LabSync Kiosk
-Exec=/bin/bash -c 'sleep 5 && ${CHROMIUM_BIN} --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-translate --disable-features=TranslateUI --check-for-update-interval=31536000 --disable-session-crashed-bubble ${KIOSK_URL}'
+Exec=/bin/bash -c 'sleep 5 && ${CHROMIUM_BIN} --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-translate --disable-features=TranslateUI --check-for-update-interval=31536000 --disable-session-crashed-bubble --password-store=basic ${KIOSK_URL}'
 X-GNOME-Autostart-enabled=true
 EOF
 

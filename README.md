@@ -108,13 +108,16 @@ Plug in the Pi's USB-C power cable. The desktop should appear on the touchscreen
 
    # Create a profile for the OmniKey's USB-Ethernet interface
    sudo nmcli connection add type ethernet con-name usb0-omnikey ifname usb0 ipv4.method auto connection.autoconnect yes
+   ```
 
-   # Bring both up
+   The profiles are set to `autoconnect`, so they will activate automatically when the interfaces are available. If an ethernet cable is already plugged in, you can bring the connections up immediately:
+
+   ```
    sudo nmcli connection up "Wired"
    sudo nmcli connection up usb0-omnikey
    ```
 
-   Verify the result:
+   Verify the result (requires an ethernet cable plugged into the Pi):
 
    ```
    nmcli device status
@@ -122,7 +125,7 @@ Plug in the Pi's USB-C power cable. The desktop should appear on the touchscreen
    ip a show usb0
    ```
 
-   You should see `eth0` connected via `Wired` with a LAN IP from your DHCP server, and `usb0` connected via `usb0-omnikey` with an IP in the `192.168.63.x` range (the reader's local subnet).
+   You should see `eth0` connected via `Wired` with a LAN IP from your DHCP server, and `usb0` connected via `usb0-omnikey` with an IP in the `192.168.63.x` range (the reader's local subnet). If no ethernet cable is connected, `eth0` will show as `unavailable` — this is normal and the profile will activate when a cable is plugged in.
 
 7. Make sure git is installed (it should be by default):
    ```
