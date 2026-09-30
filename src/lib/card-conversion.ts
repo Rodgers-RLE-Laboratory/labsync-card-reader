@@ -1,9 +1,39 @@
 /**
- * Convert HID card reader output to MIT Card API format.
- * Port of hid_to_api() from make-checkin.py:50-59.
+ * Readers output one of two formats:
+ * - Decimal digits (e.g. OmniKey 5427CK), 5-15 digits
+ * - Hex of the raw 35-bit HID Corporate 1000 credential, 9-10 chars
+ *   (e.g. "0788c724ce"). MIT's company code (3142) always puts a "C" or
+ *   "D" in this output, so all-digit strings are treated as decimal.
+ */
+const DECIMAL_CARD_ID = /^\d{5,15}$/;
+const HEX_CARD_ID = /^(?=.*[a-f])[0-9a-f]{9,10}$/i;
+const TWO_POW_33 = 2 ** 33;
+const TWO_POW_35 = 2 ** 35;
+
+function isHexCardId(rawCardId: string): boolean {
+  // Must also fit in 35 bits (Corporate 1000 format)
+  return HEX_CARD_ID.test(rawCardId) && parseInt(rawCardId, 16) < TWO_POW_35;
+}
+
+export function isValidCardId(rawCardId: string): boolean {
+  return DECIMAL_CARD_ID.test(rawCardId) || isHexCardId(rawCardId);
+}
+
+/**
+ * Convert card reader output to MIT Card API format.
+ * Port of hid_to_api() from make-checkin.py:50-59, plus hex reader support.
  */
 export function hidToApi(rawCardId: string): string {
-  if (rawCardId.length === 11) {
+  if (isHexCardId(rawCardId)) {
+    // Raw 35-bit Corporate 1000: 2 parity | 12-bit company | 20-bit card | 1 parity.
+    // The API expects the same bits with the parity bits zeroed, matching
+    // the "00" + company + card + "0" layout of the 11-digit branch below.
+    // Arithmetic rather than bitwise ops, since JS bitwise ops truncate to 32 bits.
+    const raw = parseInt(rawCardId, 16);
+    const withoutLeadingParity = raw % TWO_POW_33;
+    const apiValue = withoutLeadingParity - (withoutLeadingParity % 2);
+    return apiValue.toString(16).toUpperCase();
+  } else if (rawCardId.length === 11) {
     // Take last 7 digits → 20-bit binary padded + trailing 0
     // Prepend "00110001000110" → convert to hex
     const last7 = rawCardId.slice(-7);

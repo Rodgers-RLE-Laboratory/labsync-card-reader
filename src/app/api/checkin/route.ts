@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { hidToApi } from "@/lib/card-conversion";
+import { hidToApi, isValidCardId } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
 import { CheckinArea, logCheckin, NemoOutcome } from "@/lib/firestore";
 import { createAreaAccessRecord, getAreaName, isCheckedInToArea, nemoFailureReason } from "@/lib/nemo-api";
@@ -51,8 +51,11 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
     const body: CheckinRequest = await request.json();
     const { rawCardId } = body;
 
-    // Validate input: numeric, 5-15 digits
-    if (!rawCardId || !/^\d{5,15}$/.test(rawCardId)) {
+    // Validate input: 5-15 decimal digits, or 35-bit hex from newer readers
+    if (!rawCardId || !isValidCardId(rawCardId)) {
+      // Truncate so an oversized request can't flood the journal
+      const logged = String(rawCardId).slice(0, 40);
+      console.warn(`[Checkin] Rejected card ID with invalid format: ${JSON.stringify(logged)}`);
       return NextResponse.json(
         { success: false, error: "Invalid card ID format", errorCode: "INVALID_CARD" },
         { status: 400 }

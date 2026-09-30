@@ -12,7 +12,7 @@ Built with Next.js and designed to run full-screen on a Raspberry Pi with the of
 
 - Raspberry Pi 4 (2GB RAM or more)
 - Raspberry Pi official 7" touchscreen display (DSI ribbon cable + micro-USB power)
-- USB HID card reader (any reader that emulates keyboard input — sends digits followed by Enter)
+- USB HID card reader (any reader that emulates keyboard input — sends the card ID followed by Enter, as decimal digits or hex)
 - microSD card (16GB or more)
 - USB-C power supply for the Pi (27 W or greater)
 - Micro-USB cable or adapter to power the touchscreen
@@ -315,9 +315,10 @@ sudo systemctl restart labsync-card-reader
 **Card reader not working:**
 
 - Make sure the reader is plugged in before opening the app
-- The reader must send digits followed by an Enter key — most HID badge readers do this by default
-- Test by opening a text editor on the Pi and swiping a card — you should see numbers appear followed by a newline
-- The app expects 5-15 digit card IDs
+- The reader must send the card ID followed by an Enter key — most HID badge readers do this by default
+- Test by opening a text editor on the Pi and swiping a card — you should see the card ID appear followed by a newline
+- The app accepts 5-15 digit decimal card IDs, or 9-10 character hex IDs (raw 35-bit HID Corporate 1000 data, e.g. `0788c724ce`)
+- Rejected IDs are logged as `[Checkin] Rejected card ID with invalid format` in `journalctl -u labsync-card-reader`
 
 **Can't reach the app in Chromium:**
 
