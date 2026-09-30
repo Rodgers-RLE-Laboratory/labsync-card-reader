@@ -13,11 +13,7 @@ import { AlreadyCheckedInScreen } from "./AlreadyCheckedInScreen";
 import Image from "next/image";
 import { KioskState, KioskData, CheckinResponse } from "@/lib/types";
 
-interface KioskScreenProps {
-  siteTitle: string;
-}
-
-export function KioskScreen({ siteTitle }: KioskScreenProps) {
+export function KioskScreen() {
   const [state, setState] = useState<KioskState>("idle");
   const [data, setData] = useState<KioskData>({});
 

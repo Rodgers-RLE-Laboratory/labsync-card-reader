@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { hidToApi } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
-import { logCheckin, NemoOutcome } from "@/lib/firestore";
-import { createAreaAccessRecord, isCheckedInToArea, nemoFailureReason } from "@/lib/nemo-api";
+import { CheckinArea, logCheckin, NemoOutcome } from "@/lib/firestore";
+import { createAreaAccessRecord, getAreaName, isCheckedInToArea, nemoFailureReason } from "@/lib/nemo-api";
 import { lookupUserStatus, reactivateUser, restoreArchivedUser } from "@/lib/user-status";
 import { CheckinRequest, CheckinResponse } from "@/lib/types";
 import { env } from "@/lib/env";
@@ -158,14 +158,25 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       }
     }
 
+    // Area for the Firestore record. The name lookup is best-effort: the
+    // area ID alone still identifies the area if NEMO can't be reached.
+    const areaId = Number(env("NEMO_AREA_ID"));
+    const area: CheckinArea = Number.isInteger(areaId) && areaId > 0 ? { id: areaId } : {};
+    if (area.id !== undefined) {
+      try {
+        area.name = await getAreaName();
+      } catch (err) {
+        console.error("[NEMO] Error looking up area name:", err instanceof Error ? err.message : err);
+      }
+    }
+
     // Log to Firestore — a backup record of every tap, including whether it
     // reached NEMO, so a failure here is not fatal
     const nemoOutcome: NemoOutcome = nemoFailure
       ? { checkedIn: false, error: nemoFailure instanceof Error ? nemoFailure.message : String(nemoFailure) }
       : { checkedIn: true, recordId: nemoRecordId };
     try {
-      const areaName = env("SITE_TITLE") || "Unknown";
-      await logCheckin(cardResult, areaName, nemoOutcome);
+      await logCheckin(cardResult, area, nemoOutcome);
     } catch (err) {
       console.error("[Firestore] Error logging check-in:", err);
     }

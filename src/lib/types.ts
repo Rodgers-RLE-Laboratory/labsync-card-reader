@@ -36,6 +36,11 @@ export interface NemoUser {
   projects: number[];
 }
 
+export interface NemoArea {
+  id: number;
+  name: string;
+}
+
 export interface NemoAreaAccessResult {
   success: boolean;
   recordId?: number;

@@ -182,7 +182,6 @@ The script will:
    - `NEMO_URL` — required
    - `NEMO_API_TOKEN` — required
    - `NEMO_AREA_ID` — required (chosen from a list of NEMO areas)
-   - `SITE_TITLE` — the name shown on screen, defaults to "LabSync"
 5. Install and start the app as a systemd service
 
 Once it finishes, verify the app is running:

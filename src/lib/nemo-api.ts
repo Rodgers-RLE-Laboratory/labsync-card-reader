@@ -1,8 +1,11 @@
-import { NemoUser, NemoAreaAccessResult } from "./types";
+import { NemoArea, NemoUser, NemoAreaAccessResult } from "./types";
 import { env } from "./env";
 
 // Abort NEMO requests that hang so the kiosk doesn't sit on "processing"
 const NEMO_TIMEOUT_MS = 10_000;
+
+// Area names rarely change, so look each one up once per server run
+const areaNameCache = new Map<string, string>();
 
 interface NemoConfig {
   nemoUrl: string;
@@ -135,6 +138,26 @@ async function lookupNemoUser(kerberosId: string, config: NemoConfig): Promise<N
   }
 
   return users[0];
+}
+
+/**
+ * Get the name of this kiosk's NEMO area (e.g. "Ballroom 36-511").
+ */
+export async function getAreaName(): Promise<string> {
+  const config = getNemoConfig();
+  const cached = areaNameCache.get(config.areaId);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await nemoFetch(config, `areas/${config.areaId}/`);
+  if (!response.ok) {
+    throw await nemoResponseError("NEMO area lookup failed", response);
+  }
+
+  const area: NemoArea = await response.json();
+  areaNameCache.set(config.areaId, area.name);
+  return area.name;
 }
 
 /**
