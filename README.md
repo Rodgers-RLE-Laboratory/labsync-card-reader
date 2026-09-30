@@ -183,6 +183,7 @@ The script will:
    - `NEMO_API_TOKEN` — required
    - `NEMO_AREA_ID` — required (chosen from a list of NEMO areas)
 5. Install and start the app as a systemd service
+6. Reboot the Pi if kiosk mode is running, so the screen picks up the new version (10-second countdown; press Ctrl+C to cancel)
 
 Once it finishes, verify the app is running:
 
@@ -230,7 +231,7 @@ sudo systemctl restart labsync-card-reader
 
 **Update to the latest version:**
 
-Re-run the install script. It will pull the latest code, rebuild, and restart the kiosk browser so the screen picks up the new version. When it asks `.env.local already exists. Overwrite? [y/N]`, answer **N** to keep your current settings.
+Re-run the install script. It will pull the latest code, rebuild, and reboot the Pi if kiosk mode is running so the screen picks up the new version. When it asks `.env.local already exists. Overwrite? [y/N]`, answer **N** to keep your current settings.
 
 ```
 sudo bash /opt/labsync-card-reader/install.sh

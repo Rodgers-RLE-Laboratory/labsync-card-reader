@@ -148,47 +148,6 @@ systemctl enable "$SERVICE_NAME"
 systemctl restart "$SERVICE_NAME"
 echo "[OK] Service installed and started."
 
-# ── 7. Restart the kiosk browser if it's running ────────────────────
-# Kiosk Chromium never reloads on its own, so without a restart it keeps
-# running the old app code until the next reboot.
-KIOSK_PATTERN="--kiosk .*localhost:3000"
-KIOSK_PID=$(pgrep -o -f -- "$KIOSK_PATTERN" || true)
-
-if [[ -n "$KIOSK_PID" ]]; then
-  KIOSK_USER=$(stat -c %U "/proc/$KIOSK_PID")
-  KIOSK_HOME=$(getent passwd "$KIOSK_USER" | cut -d: -f6)
-  KIOSK_DESKTOP="$KIOSK_HOME/.config/autostart/labsync-kiosk.desktop"
-
-  if [[ -f "$KIOSK_DESKTOP" ]]; then
-    echo "[*] Restarting kiosk browser..."
-
-    # Relaunch with the same display/session variables as the running browser
-    mapfile -t KIOSK_ENV < <(tr '\0' '\n' < "/proc/$KIOSK_PID/environ" \
-      | grep -E '^(DISPLAY|WAYLAND_DISPLAY|XAUTHORITY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)=' || true)
-    KIOSK_EXEC=$(grep -m1 '^Exec=' "$KIOSK_DESKTOP" | cut -d= -f2-)
-
-    # Wait for the app to respond so the browser doesn't load an error page
-    for _ in {1..30}; do
-      curl -sf -o /dev/null http://127.0.0.1:3000 && break
-      sleep 1
-    done
-
-    pkill -f -- "$KIOSK_PATTERN" || true
-    for _ in {1..10}; do
-      pgrep -f -- "$KIOSK_PATTERN" >/dev/null || break
-      sleep 1
-    done
-    pkill -9 -f -- "$KIOSK_PATTERN" || true
-
-    sudo -u "$KIOSK_USER" env HOME="$KIOSK_HOME" "${KIOSK_ENV[@]}" \
-      setsid /bin/bash -c "$KIOSK_EXEC" </dev/null >/dev/null 2>&1 &
-    echo "[OK] Kiosk browser restarted."
-  else
-    echo "[!] Kiosk browser is running but $KIOSK_DESKTOP was not found."
-    echo "    Reload it manually (F5) or reboot to pick up the new version."
-  fi
-fi
-
 # ── Done ─────────────────────────────────────────────────────────────
 echo
 echo "========================================"
@@ -203,3 +162,19 @@ echo ""
 echo "  To set up kiosk mode, run:"
 echo "    sudo bash $INSTALL_DIR/kiosk.sh"
 echo "========================================"
+
+# ── Reboot if the kiosk browser is running ───────────────────────────
+# Kiosk Chromium never reloads on its own, so reboot to make sure the
+# screen is running the new version of the app. Skipped when kiosk mode
+# isn't running (e.g. a first install before kiosk.sh has been run).
+if pgrep -f -- "--kiosk .*localhost:3000" >/dev/null; then
+  echo
+  echo "Rebooting in 10 seconds so the kiosk picks up the new version."
+  echo "Press Ctrl+C to cancel."
+  for i in {10..1}; do
+    printf "\r  %2d " "$i"
+    sleep 1
+  done
+  echo
+  reboot
+fi
