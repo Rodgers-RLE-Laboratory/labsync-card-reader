@@ -9,6 +9,7 @@ import { ErrorScreen } from "./ErrorScreen";
 import { RestoredScreen } from "./RestoredScreen";
 import { PendingUserScreen } from "./PendingUserScreen";
 import { UnknownUserScreen } from "./UnknownUserScreen";
+import { AlreadyCheckedInScreen } from "./AlreadyCheckedInScreen";
 import Image from "next/image";
 import { KioskState, KioskData, CheckinResponse } from "@/lib/types";
 
@@ -40,7 +41,11 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
         const result: CheckinResponse = await response.json();
 
         if (result.success) {
-          if (result.userStatus === "restored") {
+          if (result.alreadyCheckedIn) {
+            setState("already_checked_in");
+            setData({ firstName: result.firstName, lastName: result.lastName });
+            setTimeout(resetToIdle, 3000);
+          } else if (result.userStatus === "restored") {
             setState("restored");
             setData({ firstName: result.firstName, lastName: result.lastName });
             setTimeout(resetToIdle, 5000);
@@ -115,6 +120,12 @@ export function KioskScreen({ siteTitle }: KioskScreenProps) {
       )}
       {state === "restored" && (
         <RestoredScreen
+          firstName={data.firstName || ""}
+          lastName={data.lastName || ""}
+        />
+      )}
+      {state === "already_checked_in" && (
+        <AlreadyCheckedInScreen
           firstName={data.firstName || ""}
           lastName={data.lastName || ""}
         />

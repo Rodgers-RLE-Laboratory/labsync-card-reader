@@ -32,7 +32,7 @@ The SmartiPi Touch 2 case is VESA 75 compatible. The following parts make a comp
 
 - MIT Card API client ID and secret (OAuth2 credentials)
 - Firebase service account JSON key file
-- NEMO API token and URL (optional, for NEMO area access integration)
+- NEMO API token, URL, and area ID (required — check-ins are recorded as NEMO area access)
 
 ## Step 1: Flash Raspberry Pi OS
 
@@ -179,9 +179,9 @@ The script will:
    - `MIT_CARD_CLIENT_ID` — required
    - `MIT_CARD_CLIENT_SECRET` — required
    - `FIREBASE_SERVICE_ACCOUNT_KEY` — path to the JSON file you copied in Step 4
-   - `NEMO_URL` — optional, press Enter to skip
-   - `NEMO_API_TOKEN` — optional, press Enter to skip
-   - `NEMO_AREA_ID` — optional, press Enter to skip
+   - `NEMO_URL` — required
+   - `NEMO_API_TOKEN` — required
+   - `NEMO_AREA_ID` — required (chosen from a list of NEMO areas)
    - `SITE_TITLE` — the name shown on screen, defaults to "LabSync"
 5. Install and start the app as a systemd service
 

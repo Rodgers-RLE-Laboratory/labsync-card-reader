@@ -92,8 +92,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
   read -rp "MIT_CARD_CLIENT_SECRET (required): " MIT_CARD_CLIENT_SECRET < /dev/tty
   read -rp "FIREBASE_SERVICE_ACCOUNT_KEY path (required) [/opt/labsync-card-reader/firebase-service-account.json]: " FIREBASE_KEY < /dev/tty
   FIREBASE_KEY="${FIREBASE_KEY:-/opt/labsync-card-reader/firebase-service-account.json}"
-  read -rp "NEMO_URL (optional): " NEMO_URL < /dev/tty
-  read -rp "NEMO_API_TOKEN (optional): " NEMO_API_TOKEN < /dev/tty
+  read -rp "NEMO_URL (required): " NEMO_URL < /dev/tty
+  read -rp "NEMO_API_TOKEN (required): " NEMO_API_TOKEN < /dev/tty
 
   NEMO_AREA_ID=""
   if [[ -n "$NEMO_URL" && -n "$NEMO_API_TOKEN" ]]; then
@@ -113,7 +113,7 @@ for a in areas:
       read -rp "  Select area ID for this kiosk: " NEMO_AREA_ID < /dev/tty
     else
       echo "  [!] Could not fetch areas from NEMO. You can set NEMO_AREA_ID manually later."
-      read -rp "NEMO_AREA_ID (optional): " NEMO_AREA_ID < /dev/tty
+      read -rp "NEMO_AREA_ID (required): " NEMO_AREA_ID < /dev/tty
     fi
   fi
 

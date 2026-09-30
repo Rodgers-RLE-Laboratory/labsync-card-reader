@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { hidToApi } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
-import { logCheckin } from "@/lib/firestore";
-import { createAreaAccessRecord } from "@/lib/nemo-api";
+import { logCheckin, NemoOutcome } from "@/lib/firestore";
+import { createAreaAccessRecord, isCheckedInToArea, nemoFailureReason } from "@/lib/nemo-api";
 import { lookupUserStatus, reactivateUser, restoreArchivedUser } from "@/lib/user-status";
 import { CheckinRequest, CheckinResponse } from "@/lib/types";
 import { env } from "@/lib/env";
@@ -111,6 +111,24 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       });
     }
 
+    // Already checked in to this area in NEMO: ignore the repeat tap.
+    // A lookup failure is held until after the Firestore backup log below,
+    // so the tap is still recorded before the check-in fails.
+    let nemoFailure: unknown = null;
+    try {
+      if (await isCheckedInToArea(cardResult.krbName)) {
+        console.log(`[NEMO] ${cardResult.krbName} already checked in, ignoring tap`);
+        return NextResponse.json({
+          success: true,
+          firstName: cardResult.firstName,
+          lastName: cardResult.lastName,
+          alreadyCheckedIn: true,
+        });
+      }
+    } catch (err) {
+      nemoFailure = err;
+    }
+
     // Inactive users: reactivate
     if (userStatus === "inactive") {
       try {
@@ -129,23 +147,39 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       }
     }
 
-    // Log to Firestore
-    try {
-      const areaName = env("SITE_TITLE") || "Unknown";
-      await logCheckin(cardResult, areaName);
-    } catch (err) {
-      console.error("[Firestore] Error logging check-in:", err);
-      return NextResponse.json(
-        { success: false, error: "Failed to log check-in", errorCode: "FIRESTORE_ERROR" },
-        { status: 500 }
-      );
+    // NEMO area access record — the purpose of the check-in
+    let nemoRecordId: number | undefined;
+    if (!nemoFailure) {
+      try {
+        const result = await createAreaAccessRecord(cardResult.krbName);
+        nemoRecordId = result.recordId;
+      } catch (err) {
+        nemoFailure = err;
+      }
     }
 
-    // NEMO area access (non-fatal)
+    // Log to Firestore — a backup record of every tap, including whether it
+    // reached NEMO, so a failure here is not fatal
+    const nemoOutcome: NemoOutcome = nemoFailure
+      ? { checkedIn: false, error: nemoFailure instanceof Error ? nemoFailure.message : String(nemoFailure) }
+      : { checkedIn: true, recordId: nemoRecordId };
     try {
-      await createAreaAccessRecord(cardResult.krbName);
+      const areaName = env("SITE_TITLE") || "Unknown";
+      await logCheckin(cardResult, areaName, nemoOutcome);
     } catch (err) {
-      console.error("[NEMO] Non-fatal error creating area access record:", err);
+      console.error("[Firestore] Error logging check-in:", err);
+    }
+
+    // A NEMO failure fails the check-in, with a reason shown on the kiosk
+    if (nemoFailure) {
+      console.error(
+        `[NEMO] Check-in failed for ${cardResult.krbName}:`,
+        nemoFailure instanceof Error ? nemoFailure.message : nemoFailure
+      );
+      return NextResponse.json(
+        { success: false, error: nemoFailureReason(nemoFailure), errorCode: "NEMO_ERROR" },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({

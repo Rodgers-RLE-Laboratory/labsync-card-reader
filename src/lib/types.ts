@@ -9,8 +9,9 @@ export interface CheckinResponse {
   firstName?: string;
   lastName?: string;
   error?: string;
-  errorCode?: "INVALID_CARD" | "CARD_NOT_FOUND" | "API_ERROR" | "FIRESTORE_ERROR";
+  errorCode?: "INVALID_CARD" | "CARD_NOT_FOUND" | "API_ERROR" | "FIRESTORE_ERROR" | "NEMO_ERROR";
   userStatus?: UserStatus;
+  alreadyCheckedIn?: boolean;
 }
 
 export interface CardLookupResult {
@@ -41,7 +42,7 @@ export interface NemoAreaAccessResult {
   error?: string;
 }
 
-export type KioskState = "idle" | "processing" | "success" | "error" | "restored" | "pending_user" | "unknown_user";
+export type KioskState = "idle" | "processing" | "success" | "error" | "restored" | "pending_user" | "unknown_user" | "already_checked_in";
 
 export interface KioskData {
   firstName?: string;
