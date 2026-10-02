@@ -1,30 +1,80 @@
 /**
- * Readers output one of two formats:
+ * Readers output card IDs in one of these forms:
  * - Decimal digits (e.g. OmniKey 5427CK), 5-15 digits
  * - Hex of the raw 35-bit HID Corporate 1000 credential, 9-10 chars
- *   (e.g. "0788c724ce"). MIT's company code (3142) always puts a "C" or
- *   "D" in this output, so all-digit strings are treated as decimal.
+ *   (e.g. "0788c724ce"), read from the card's 125 kHz Prox side
+ * - Hex of a 4-byte chip serial number, 8 chars (e.g. "8236288a"), read
+ *   from the card's 13.56 MHz side
+ *
+ * Decimal and hex can't always be told apart: an 8-char serial number made
+ * only of digits looks like a decimal ID. CARD_READER_FORMAT tells us which
+ * the kiosk's reader sends. In "auto" mode, all-digit IDs are treated as
+ * decimal. (35-bit IDs are safe either way: MIT's company code (3142) always
+ * puts a "C" or "D" in their hex.)
  */
+export type CardReaderFormat = "auto" | "decimal" | "hex";
+
+type CardIdKind = "decimal" | "hexSerial" | "hexCorporate1000";
+
 const DECIMAL_CARD_ID = /^\d{5,15}$/;
-const HEX_CARD_ID = /^(?=.*[a-f])[0-9a-f]{9,10}$/i;
+const HEX_SERIAL_ID = /^[0-9a-f]{8}$/i;
+const HEX_CORPORATE_1000_ID = /^[0-9a-f]{9,10}$/i;
 const TWO_POW_33 = 2 ** 33;
 const TWO_POW_35 = 2 ** 35;
 
-function isHexCardId(rawCardId: string): boolean {
-  // Must also fit in 35 bits (Corporate 1000 format)
-  return HEX_CARD_ID.test(rawCardId) && parseInt(rawCardId, 16) < TWO_POW_35;
+/**
+ * Parse the CARD_READER_FORMAT setting. Unknown values fall back to "auto"
+ * so a typo doesn't stop every card from working.
+ */
+export function parseCardReaderFormat(value: string | undefined): CardReaderFormat {
+  const format = (value || "auto").trim().toLowerCase();
+  if (format === "auto" || format === "decimal" || format === "hex") {
+    return format;
+  }
+  console.warn(`[Card] Unknown CARD_READER_FORMAT ${JSON.stringify(value)}, using "auto"`);
+  return "auto";
 }
 
-export function isValidCardId(rawCardId: string): boolean {
-  return DECIMAL_CARD_ID.test(rawCardId) || isHexCardId(rawCardId);
+function classifyHex(rawCardId: string): CardIdKind | null {
+  if (HEX_SERIAL_ID.test(rawCardId)) {
+    return "hexSerial";
+  }
+  // Must also fit in 35 bits (Corporate 1000 format)
+  if (HEX_CORPORATE_1000_ID.test(rawCardId) && parseInt(rawCardId, 16) < TWO_POW_35) {
+    return "hexCorporate1000";
+  }
+  return null;
+}
+
+function classifyCardId(rawCardId: string, format: CardReaderFormat): CardIdKind | null {
+  const isDecimal = DECIMAL_CARD_ID.test(rawCardId);
+
+  switch (format) {
+    case "decimal":
+      return isDecimal ? "decimal" : null;
+    case "hex":
+      return classifyHex(rawCardId);
+    case "auto":
+      return isDecimal ? "decimal" : classifyHex(rawCardId);
+  }
+}
+
+export function isValidCardId(rawCardId: string, format: CardReaderFormat): boolean {
+  return classifyCardId(rawCardId, format) !== null;
 }
 
 /**
  * Convert card reader output to MIT Card API format.
  * Port of hid_to_api() from make-checkin.py:50-59, plus hex reader support.
+ * Call isValidCardId() first.
  */
-export function hidToApi(rawCardId: string): string {
-  if (isHexCardId(rawCardId)) {
+export function hidToApi(rawCardId: string, format: CardReaderFormat): string {
+  const kind = classifyCardId(rawCardId, format);
+
+  if (kind === "hexSerial") {
+    // The API takes the chip serial number as-is (no byte swap)
+    return rawCardId.toUpperCase();
+  } else if (kind === "hexCorporate1000") {
     // Raw 35-bit Corporate 1000: 2 parity | 12-bit company | 20-bit card | 1 parity.
     // The API expects the same bits with the parity bits zeroed, matching
     // the "00" + company + card + "0" layout of the 11-digit branch below.

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { hidToApi, isValidCardId } from "@/lib/card-conversion";
+import { hidToApi, isValidCardId, parseCardReaderFormat } from "@/lib/card-conversion";
 import { lookupCard } from "@/lib/mit-card-api";
 import { CheckinArea, logCheckin, NemoOutcome } from "@/lib/firestore";
 import { createAreaAccessRecord, getAreaName, isCheckedInToArea, nemoFailureReason } from "@/lib/nemo-api";
@@ -51,8 +51,9 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
     const body: CheckinRequest = await request.json();
     const { rawCardId } = body;
 
-    // Validate input: 5-15 decimal digits, or 35-bit hex from newer readers
-    if (!rawCardId || !isValidCardId(rawCardId)) {
+    // Validate input against the formats this kiosk's reader sends
+    const readerFormat = parseCardReaderFormat(env("CARD_READER_FORMAT"));
+    if (!rawCardId || !isValidCardId(rawCardId, readerFormat)) {
       // Truncate so an oversized request can't flood the journal
       const logged = String(rawCardId).slice(0, 40);
       console.warn(`[Checkin] Rejected card ID with invalid format: ${JSON.stringify(logged)}`);
@@ -72,13 +73,14 @@ export async function POST(request: Request): Promise<NextResponse<CheckinRespon
       console.warn("[Checkin] Using MOCK_CARD_USER — bypassing MIT Card API");
     } else {
       // Convert HID card format to API format
-      const cardId = hidToApi(rawCardId);
+      const cardId = hidToApi(rawCardId, readerFormat);
 
       try {
         cardResult = await lookupCard(cardId);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         if (message === "CARD_NOT_FOUND") {
+          console.warn(`[Checkin] Card not found: reader sent ${JSON.stringify(rawCardId)}, looked up ${cardId}`);
           return NextResponse.json(
             { success: false, error: "Card not recognized", errorCode: "CARD_NOT_FOUND" },
             { status: 404 }

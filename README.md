@@ -182,6 +182,7 @@ The script will:
    - `NEMO_URL` — required
    - `NEMO_API_TOKEN` — required
    - `NEMO_AREA_ID` — required (chosen from a list of NEMO areas)
+   - `CARD_READER_FORMAT` — `decimal` for OmniKey 5427CK readers, `hex` for readers that send hex, or `auto` (default)
 5. Install and start the app as a systemd service
 6. Reboot the Pi if kiosk mode is running, so the screen picks up the new version (10-second countdown; press Ctrl+C to cancel)
 
@@ -317,8 +318,12 @@ sudo systemctl restart labsync-card-reader
 - Make sure the reader is plugged in before opening the app
 - The reader must send the card ID followed by an Enter key — most HID badge readers do this by default
 - Test by opening a text editor on the Pi and swiping a card — you should see the card ID appear followed by a newline
-- The app accepts 5-15 digit decimal card IDs, or 9-10 character hex IDs (raw 35-bit HID Corporate 1000 data, e.g. `0788c724ce`)
+- Set `CARD_READER_FORMAT` in `.env.local` to match the reader, then restart the service:
+  - `decimal` — 5-15 digit card IDs (OmniKey 5427CK)
+  - `hex` — 8 character chip serial numbers (e.g. `8236288a`) or 9-10 character raw 35-bit HID Corporate 1000 data (e.g. `0788c724ce`)
+  - `auto` (default) — all-digit IDs are treated as decimal, anything else as hex. An 8 character serial number made only of digits will be misread, so prefer `hex` for hex readers
 - Rejected IDs are logged as `[Checkin] Rejected card ID with invalid format` in `journalctl -u labsync-card-reader`
+- IDs the MIT Card API doesn't recognize are logged as `[Checkin] Card not found`, with both the raw reader output and the converted ID
 
 **Can't reach the app in Chromium:**
 
